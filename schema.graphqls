@@ -1,0 +1,40 @@
+input UpsertCartRequest {
+    sku: String!
+    qty: Int!
+    user_id: Int!
+}
+
+input MapCheckout {
+    key: String!
+    value: Int!
+}
+input CheckoutRequest {
+    items:[MapCheckout]
+    user_id: Int!
+}
+
+
+type GeneralResponse {
+    Success: Boolean
+}
+
+type CheckoutResponse {
+    items: [Item]
+    total_price: Float
+}
+
+type Item {
+    sku: String
+    name: String
+    price: Float
+    qty: Int
+}
+
+type Query {
+    getCart(user_id: Int): [Item]
+}
+
+type Mutation {
+    upsertCart(input: UpsertCartRequest!): GeneralResponse!
+    checkout(input: CheckoutRequest!): CheckoutResponse!
+}

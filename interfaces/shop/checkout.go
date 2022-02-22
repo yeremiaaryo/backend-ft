@@ -101,5 +101,5 @@ func countDiscount(input shop.CheckoutRequest, mapPrice map[string]float32) floa
 	} else {
 		raspberryDiscount = raspberryDiscount + (float32(input.Items["43N23P"]) * mapPrice["234234"])
 	}
-	return googleHomeDiscount + alexaDiscount + raspberryDiscount
+	return (googleHomeDiscount + alexaDiscount + raspberryDiscount) * 100 / 100
 }

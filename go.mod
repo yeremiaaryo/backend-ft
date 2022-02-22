@@ -13,6 +13,7 @@ require (
 	github.com/labstack/gommon v0.3.1 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/stretchr/testify v1.7.0
+	github.com/zhashkevych/go-sqlxmock v1.5.1
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 )
