@@ -1,7 +1,6 @@
 package shop
 
 import (
-	"backend-ft/common/shop"
 	"errors"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/golang/mock/gomock"
@@ -10,7 +9,7 @@ import (
 	"testing"
 )
 
-func Test_shopRepository_GetCartByUserIDAndStatusInCart(t *testing.T) {
+func Test_shopRepository_GetItemByMultipleSKU(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -22,13 +21,16 @@ func Test_shopRepository_GetCartByUserIDAndStatusInCart(t *testing.T) {
 		defer db.Close()
 
 		var (
-			userID = int64(1)
-			newDB  = sqlx.NewDb(db, "sqlMock")
+			newDB = sqlx.NewDb(db, "sqlMock")
+			sku   = []string{""}
 		)
 
-		mock.ExpectPrepare(`SELECT sku, qty FROM cart WHERE user_id = ? AND status = ?`).WillReturnError(errors.New("failed"))
+		mock.ExpectBegin()
+		tx, _ := newDB.Beginx()
+		q, _, _ := sqlx.In(`SELECT sku, name, price, qty FROM items WHERE sku IN (?) FOR UPDATE`, sku)
+		mock.ExpectPrepare(q).WillReturnError(errors.New("failed"))
 		sr := NewShopRepository(newDB)
-		_, err = sr.GetCartByUserIDAndStatusInCart(userID)
+		_, err = sr.GetItemByMultipleSKU(sku, tx)
 		assert.Error(t, err)
 	})
 
@@ -40,21 +42,23 @@ func Test_shopRepository_GetCartByUserIDAndStatusInCart(t *testing.T) {
 		defer db.Close()
 
 		var (
-			userID = int64(1)
-			newDB  = sqlx.NewDb(db, "sqlMock")
+			newDB = sqlx.NewDb(db, "sqlMock")
+			sku   = []string{""}
 		)
-
-		stmt := mock.ExpectPrepare(`SELECT sku, qty FROM cart WHERE user_id = ? AND status = ?`)
-		rows := sqlmock.NewRows([]string{"sku", "qty"}).
-			AddRow("sku", 1)
-		stmt.ExpectQuery().WithArgs(userID, shop.CartStatusInCart).WillReturnRows(rows)
+		mock.ExpectBegin()
+		tx, _ := newDB.Beginx()
+		q, _, _ := sqlx.In(`SELECT sku, name, price, qty FROM items WHERE sku IN (?) FOR UPDATE`, sku)
+		stmt := mock.ExpectPrepare(q)
+		rows := sqlmock.NewRows([]string{"sku", "name", "price", "qty"}).
+			AddRow("sku", "name", 29.99, 1)
+		stmt.ExpectQuery().WithArgs("").WillReturnRows(rows)
 		sr := NewShopRepository(newDB)
-		_, err = sr.GetCartByUserIDAndStatusInCart(userID)
+		_, err = sr.GetItemByMultipleSKU(sku, tx)
 		assert.Nil(t, err)
 	})
 }
 
-func Test_shopRepository_GetCartByUserIDAndSKU(t *testing.T) {
+func Test_shopRepository_GetItemBySKU(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -66,16 +70,13 @@ func Test_shopRepository_GetCartByUserIDAndSKU(t *testing.T) {
 		defer db.Close()
 
 		var (
-			userID = int64(1)
-			newDB  = sqlx.NewDb(db, "sqlMock")
-			cart   = shop.Cart{}
+			sku   = "sku"
+			newDB = sqlx.NewDb(db, "sqlMock")
 		)
 
-		mock.ExpectBegin()
-		tx, _ := newDB.Beginx()
-		mock.ExpectPrepare(`SELECT sku, qty FROM cart WHERE user_id = ? AND sku = ? FOR UPDATE`).WillReturnError(errors.New("failed"))
+		mock.ExpectPrepare(`SELECT sku, name, price, qty FROM items WHERE sku = ?`).WillReturnError(errors.New("failed"))
 		sr := NewShopRepository(newDB)
-		_, err = sr.GetCartByUserIDAndSKU(userID, cart, tx)
+		_, err = sr.GetItemBySKU(sku)
 		assert.Error(t, err)
 	})
 
@@ -87,18 +88,16 @@ func Test_shopRepository_GetCartByUserIDAndSKU(t *testing.T) {
 		defer db.Close()
 
 		var (
-			userID = int64(1)
-			newDB  = sqlx.NewDb(db, "sqlMock")
-			cart   = shop.Cart{}
+			sku   = "sku"
+			newDB = sqlx.NewDb(db, "sqlMock")
 		)
-		mock.ExpectBegin()
-		tx, _ := newDB.Beginx()
-		stmt := mock.ExpectPrepare(`SELECT sku, qty FROM cart WHERE user_id = ? AND sku = ? FOR UPDATE`)
-		rows := sqlmock.NewRows([]string{"sku", "qty"}).
-			AddRow("sku", 1)
-		stmt.ExpectQuery().WithArgs(userID, cart.SKU).WillReturnRows(rows)
+
+		stmt := mock.ExpectPrepare(`SELECT sku, name, price, qty FROM items WHERE sku = ?`)
+		rows := sqlmock.NewRows([]string{"sku", "name", "price", "qty"}).
+			AddRow("sku", "name", 29.99, 1)
+		stmt.ExpectQuery().WithArgs(sku).WillReturnRows(rows)
 		sr := NewShopRepository(newDB)
-		_, err = sr.GetCartByUserIDAndSKU(userID, cart, tx)
+		_, err = sr.GetItemBySKU(sku)
 		assert.Nil(t, err)
 	})
 }
